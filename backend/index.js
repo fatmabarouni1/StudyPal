@@ -1,8 +1,19 @@
 const express = require("express");
 const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
 
 const app = express();
 const PORT = 5000;
+
+dotenv.config();
+
+const JWT_SECRET =
+  process.env.JWT_SECRET || "dev-secret-change-me-in-env";
+const TOKEN_EXPIRY = "2h";
+
+const users = new Map();
 
 // =======================
 // Middlewares
@@ -29,6 +40,15 @@ app.post("/register", (req, res) => {
     });
   }
 
+  if (users.has(email)) {
+    return res.status(409).json({
+      message: "User already exists",
+    });
+  }
+
+  const passwordHash = bcrypt.hashSync(password, 12);
+  users.set(email, { email, passwordHash });
+
   res.json({
     message: "User registered successfully",
     user: {
@@ -41,13 +61,28 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  // Fake credentials for now
-  if (email === "test@test.com" && password === "1234") {
-    return res.json({
-      message: "Login successful",
-      token: "fake-jwt-token",
+  const user = users.get(email);
+  if (!user) {
+    return res.status(401).json({
+      message: "Invalid credentials",
     });
   }
+
+  const passwordMatches = bcrypt.compareSync(password, user.passwordHash);
+  if (!passwordMatches) {
+    return res.status(401).json({
+      message: "Invalid credentials",
+    });
+  }
+
+  const token = jwt.sign({ email }, JWT_SECRET, {
+    expiresIn: TOKEN_EXPIRY,
+  });
+
+  return res.json({
+    message: "Login successful",
+    token,
+  });
 
   res.status(401).json({
     message: "Invalid credentials",
