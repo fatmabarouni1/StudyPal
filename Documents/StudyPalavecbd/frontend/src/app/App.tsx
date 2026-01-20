@@ -30,6 +30,7 @@ export default function App() {
 
   const handleAuthenticated = (authenticatedUser: User) => {
     setUser(authenticatedUser);
+    localStorage.setItem('focusspace_user', JSON.stringify(authenticatedUser));
     setCurrentScreen('dashboard');
   };
 
