@@ -12,6 +12,7 @@ interface AuthScreenProps {
 }
 
 export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
+  const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,7 +38,7 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/login", {
+      const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,9 +51,14 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
 
       if (!response.ok) throw new Error(data.message);
 
+      const authenticatedUser = {
+        name: data.user?.name ?? "User",
+        email: data.user?.email ?? loginEmail,
+      };
+
       setSuccess("Login successful!");
       setTimeout(() => {
-        onAuthenticated({ name: "User", email: loginEmail });
+        onAuthenticated(authenticatedUser);
       }, 1000);
 
     } catch (err: any) {
@@ -89,10 +95,11 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/register", {
+      const response = await fetch(`${apiBaseUrl}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: registerName,
           email: registerEmail,
           password: registerPassword
         }),
@@ -102,9 +109,14 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
 
       if (!response.ok) throw new Error(data.message);
 
+      const authenticatedUser = {
+        name: data.user?.name ?? registerName,
+        email: data.user?.email ?? registerEmail,
+      };
+
       setSuccess("Account created successfully!");
       setTimeout(() => {
-        onAuthenticated({ name: registerName, email: registerEmail });
+        onAuthenticated(authenticatedUser);
       }, 1000);
 
     } catch (err: any) {
@@ -304,4 +316,3 @@ export function AuthScreen({ onAuthenticated, onBack }: AuthScreenProps) {
     </div>
   );
 }
-
